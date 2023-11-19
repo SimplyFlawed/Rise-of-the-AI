@@ -7,6 +7,7 @@
 
 #define GL_GLEXT_PROTOTYPES 1
 #include <SDL.h>
+#include <SDL_mixer.h>
 #include <SDL_opengl.h>
 #include "glm/mat4x4.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -25,6 +26,7 @@ Entity::Entity()
     m_movement = glm::vec3(0.0f);
     m_speed = 0;
     m_model_matrix = glm::mat4(1.0f);
+    m_angle = 0.0f;
 }
 
 Entity::~Entity()
@@ -79,12 +81,12 @@ void Entity::ai_activate(Entity* player)
 {
     switch (m_ai_type)
     {
-    case WALKER:
-        ai_walk();
+    case BUG:
+        ai_bug();
         break;
 
-    case GUARD:
-        ai_guard(player);
+    case WASP:
+        ai_wasp(player);
         break;
 
     default:
@@ -92,28 +94,33 @@ void Entity::ai_activate(Entity* player)
     }
 }
 
-void Entity::ai_walk()
+void Entity::ai_bug()
 {
-    m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
+    if (m_position.x < 14.1f)
+    {
+        m_movement = glm::vec3(1.0f, 0.0f, 0.0f);
+        m_animation_indices = m_walking[RIGHT];
+    }
+    if (m_position.x > 17.9f)
+    {
+        m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
+        m_animation_indices = m_walking[LEFT];
+    }
+    
 }
 
-void Entity::ai_guard(Entity* player)
+void Entity::ai_wasp(Entity* player)
 {
     switch (m_ai_state) {
-    case IDLE:
-        if (glm::distance(m_position, player->get_position()) < 3.0f) m_ai_state = WALKING;
+    case CIRCLE:
+        m_movement.x = m_radius * glm::cos(m_angle);
+        m_movement.y = m_radius * glm::sin(m_angle);
+        
         break;
 
-    case WALKING:
-        if (m_position.x > player->get_position().x) {
-            m_movement = glm::vec3(-1.0f, 0.0f, 0.0f);
-        }
-        else {
-            m_movement = glm::vec3(1.0f, 0.0f, 0.0f);
-        }
-        break;
-
-    case ATTACKING:
+    case FLY:
+        if (m_position.y > -3.5f) m_movement = glm::vec3(0.0f, -1.0f, 0.0f);
+        if (m_position.y < -7.5f) m_movement = glm::vec3(0.0f, 1.0f, 0.0f);
         break;
 
     default:
@@ -122,7 +129,7 @@ void Entity::ai_guard(Entity* player)
 }
 
 
-void Entity::update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map)
+void Entity::update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx)
 {
     if (!m_is_active) return;
 
@@ -131,24 +138,34 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
     m_collided_left = false;
     m_collided_right = false;
 
+    m_angle += m_speed * delta_time;
+
     if (m_entity_type == ENEMY) ai_activate(player);
 
     if (m_animation_indices != NULL)
     {
-        m_animation_time += delta_time;
-        float frames_per_second = (float)1 / SECONDS_PER_FRAME;
-
-        if (m_animation_time >= frames_per_second)
+        if (glm::length(m_movement) != 0)
         {
-            m_animation_time = 0.0f;
-            m_animation_index++;
+            m_animation_time += delta_time;
+            float frames_per_second = (float)1 / SECONDS_PER_FRAME;
 
-            if (m_animation_index >= m_animation_frames)
+            if (m_animation_time >= frames_per_second)
             {
-                m_animation_index = 0;
+                m_animation_time = 0.0f;
+                m_animation_index++;
+
+                if (m_animation_index >= m_animation_frames)
+                {
+                    m_animation_index = 0;
+                }
             }
         }
   
+    }
+
+    if (m_ai_type == WASP) 
+    {
+        m_velocity.y = m_movement.y * m_speed;
     }
 
     m_velocity.x = m_movement.x * m_speed;
@@ -157,7 +174,7 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
     // We make two calls to our check_collision methods, one for the collidable objects and one for
     // the map.
     m_position.y += m_velocity.y * delta_time;
-    check_collision_y(objects, object_count);
+    check_collision_y(objects, object_count, sfx);
     check_collision_y(map);
 
     m_position.x += m_velocity.x * delta_time;
@@ -175,7 +192,7 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
     m_model_matrix = glm::translate(m_model_matrix, m_position);
 }
 
-void const Entity::check_collision_y(Entity* collidable_entities, int collidable_entity_count)
+void const Entity::check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx)
 {
     for (int i = 0; i < collidable_entity_count; i++)
     {
@@ -194,8 +211,16 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
                 m_position.y += y_overlap;
                 m_velocity.y = 0;
                 m_collided_bottom = true;
+
+                if (collidable_entity->get_entity_type() == ENEMY)
+                {
+                    m_velocity.y += m_jumping_power;
+                    Mix_PlayChannel(-1, sfx, 0);
+
+                }
             }
         }
+
     }
 }
 

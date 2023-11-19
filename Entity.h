@@ -1,8 +1,8 @@
 #include "Map.h"
 
-enum EntityType { PLATFORM, PLAYER, ENEMY };
-enum AIType { WALKER, GUARD };
-enum AIState { WALKING, IDLE, ATTACKING };
+enum EntityType { PLAYER, ENEMY };
+enum AIType { BUG, WASP };
+enum AIState { PATROL, FLY, CIRCLE };
 
 class Entity
 {
@@ -26,7 +26,8 @@ private:
     glm::vec3 m_movement;
     glm::mat4 m_model_matrix;
     glm::vec3 m_rotation;
-    float     m_angle;
+    float     m_angle,
+              m_radius;
 
 
     // ————— ENEMY AI ————— //
@@ -36,6 +37,7 @@ private:
 
     float m_width = 1;
     float m_height = 1;
+    bool m_is_alive = true;
 
 
 public:
@@ -82,11 +84,11 @@ public:
     ~Entity();
 
     void draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint texture_id, int index);
-    void update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map); // Now, update should check for both objects in the game AND the map
+    void update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx); // Now, update should check for both objects in the game AND the map
     void render(ShaderProgram* program);
 
     bool const check_collision(Entity* other) const;
-    void const check_collision_y(Entity* collidable_entities, int collidable_entity_count);
+    void const check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx);
     void const check_collision_x(Entity* collidable_entities, int collidable_entity_count);
 
     // Overloading our methods to check for only the map
@@ -99,8 +101,8 @@ public:
     void move_down() { m_movement.y = -1.0f; };
 
     void ai_activate(Entity* player);
-    void ai_walk();
-    void ai_guard(Entity* player);
+    void ai_bug();
+    void ai_wasp(Entity* player);
 
     void activate() { m_is_active = true; };
     void deactivate() { m_is_active = false; };
@@ -133,4 +135,5 @@ public:
     void const set_height(float new_height) { m_height = new_height; };
     void const set_rotation(glm::vec3 new_rotation) { m_rotation = new_rotation; };
     void const set_angle(float new_angle) { m_angle = new_angle; };
+    void const set_radius(float new_radius) { m_radius = new_radius; };
 };

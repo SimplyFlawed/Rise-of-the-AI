@@ -3,7 +3,7 @@
 #define LOG(argument) std::cout << argument << '\n'
 #define GL_GLEXT_PROTOTYPES 1
 #define FIXED_TIMESTEP 0.0166666f
-#define ENEMY_COUNT 1
+#define ENEMY_COUNT 3
 #define LEVEL1_WIDTH 23
 #define LEVEL1_HEIGHT 14
 
@@ -34,15 +34,16 @@ struct GameState
 
     Mix_Music* bgm;
     Mix_Chunk* jump_sfx;
+    Mix_Chunk* pop_sfx;
 };
 
 // ————— CONSTANTS ————— //
 const int   WINDOW_WIDTH = 640,
 WINDOW_HEIGHT = 480;
 
-const float BG_RED = 0.1922f,
-BG_BLUE = 0.549f,
-BG_GREEN = 0.9059f,
+const float BG_RED = 194.0f/255.0f,
+BG_GREEN = 227.0f/255.0f,
+BG_BLUE = 232.0f/255.0f,
 BG_OPACITY = 1.0f;
 
 const int   VIEWPORT_X = 0,
@@ -57,10 +58,13 @@ F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 
-const char  SPRITESHEET_FILEPATH[] = "assets/images/tilemap-player.png",
-MAP_TILESET_FILEPATH[] = "assets/images/tilemap_packed.png",
-BGM_FILEPATH[] = "assets/audio/dooblydoo.mp3",
-JUMP_SFX_FILEPATH[] = "assets/audio/bounce.wav";
+const char  PLAYER_SPRITESHEET_FILEPATH[]       = "assets/images/tilemap-player.png",
+            BUG_SPRITESHEET_FILEPATH[]          = "assets/images/tilemap-bug.png",
+            ENEMY_SPRITESHEET_FILEPATH[]        = "assets/images/tilemap-characters_packed.png",
+            MAP_TILESET_FILEPATH[]              = "assets/images/tilemap_packed.png",
+            BGM_FILEPATH[]                      = "assets/audio/dooblydoo.wav",
+            JUMP_SFX_FILEPATH[]                 = "assets/audio/jump1.wav",
+            POP_SFX_FILEPATH[]                  = "assets/audio/bubble1.wav";
 
 const int NUMBER_OF_TEXTURES = 1;
 const GLint LEVEL_OF_DETAIL = 0;
@@ -153,7 +157,7 @@ void initialise()
 
     glUseProgram(g_shader_program.get_program_id());
 
-    glClearColor(BG_RED, BG_BLUE, BG_GREEN, BG_OPACITY);
+    glClearColor(BG_RED, BG_GREEN, BG_BLUE, BG_OPACITY);
 
     // ————— MAP SET-UP ————— //
     GLuint map_texture_id = load_texture(MAP_TILESET_FILEPATH);
@@ -167,7 +171,7 @@ void initialise()
     g_game_state.player->set_movement(glm::vec3(0.0f));
     g_game_state.player->set_speed(2.5f);
     g_game_state.player->set_acceleration(glm::vec3(0.0f, -9.81f, 0.0f));
-    g_game_state.player->m_texture_id = load_texture(SPRITESHEET_FILEPATH);
+    g_game_state.player->m_texture_id = load_texture(PLAYER_SPRITESHEET_FILEPATH);
 
     // Animation
     g_game_state.player->m_walking[g_game_state.player->RIGHT] = new int[2] { 0, 1 };
@@ -179,20 +183,91 @@ void initialise()
     g_game_state.player->m_animation_time = 0.0f;
     g_game_state.player->m_animation_cols = 4;
     g_game_state.player->m_animation_rows = 1;
-    g_game_state.player->set_height(0.8f);
-    g_game_state.player->set_width(0.8f);
+    g_game_state.player->set_height(0.9f);
+    g_game_state.player->set_width(0.9f);
 
     // Jumping
     g_game_state.player->m_jumping_power = 8.0f;
 
+    // ————— ENEMY SET-UP ————— //
+    //BUG
+    g_game_state.enemies = new Entity[ENEMY_COUNT];
 
+    g_game_state.enemies[0].set_entity_type(ENEMY);
+    g_game_state.enemies[0].set_ai_type(BUG);
+    g_game_state.enemies[0].set_ai_state(PATROL);
+    g_game_state.enemies[0].m_texture_id = load_texture(BUG_SPRITESHEET_FILEPATH);
+    g_game_state.enemies[0].set_position(glm::vec3(18.0f, -9.0f, 0.0f));
+    g_game_state.enemies[0].set_movement(glm::vec3(-1.0f, 0.0f, 0.0f));
+    g_game_state.enemies[0].set_speed(0.5f);
+    g_game_state.enemies[0].set_acceleration(glm::vec3(0.0f, -9.81f, 0.0f));
+
+    g_game_state.enemies[0].m_walking[g_game_state.enemies[0].LEFT] = new int[2] { 0, 1 };
+    g_game_state.enemies[0].m_walking[g_game_state.enemies[0].RIGHT] = new int[2] { 2, 3 };
+                           
+    g_game_state.enemies[0].m_animation_indices = g_game_state.enemies[0].m_walking[g_game_state.enemies[0].LEFT];
+    g_game_state.enemies[0].m_animation_frames = 2;
+    g_game_state.enemies[0].m_animation_index = 0;
+    g_game_state.enemies[0].m_animation_time = 0.0f;
+    g_game_state.enemies[0].m_animation_cols = 4;
+    g_game_state.enemies[0].m_animation_rows = 1;
+    g_game_state.enemies[0].set_height(1.0f);
+    g_game_state.enemies[0].set_width(1.0f);
+
+    //WASP
+    g_game_state.enemies[1].set_entity_type(ENEMY);
+    g_game_state.enemies[1].set_ai_type(WASP);
+    g_game_state.enemies[1].set_ai_state(FLY);
+    g_game_state.enemies[1].m_texture_id = load_texture(ENEMY_SPRITESHEET_FILEPATH);
+    g_game_state.enemies[1].set_position(glm::vec3(8.0f, -5.0f, 0.0f));
+    g_game_state.enemies[1].set_movement(glm::vec3(0.0f, -1.0f, 0.0f));
+    g_game_state.enemies[1].set_speed(1.5f);
+    g_game_state.enemies[1].set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
+
+    g_game_state.enemies[1].m_walking[g_game_state.enemies[1].IDLE] = new int[3] { 24, 25, 26 };
+
+    g_game_state.enemies[1].m_animation_indices = g_game_state.enemies[1].m_walking[g_game_state.enemies[1].IDLE];
+    g_game_state.enemies[1].m_animation_frames = 3;
+    g_game_state.enemies[1].m_animation_index = 0;
+    g_game_state.enemies[1].m_animation_time = 0.0f;
+    g_game_state.enemies[1].m_animation_cols = 9;
+    g_game_state.enemies[1].m_animation_rows = 3;
+    g_game_state.enemies[1].set_height(1.0f);
+    g_game_state.enemies[1].set_width(1.0f);
+
+    g_game_state.enemies[2].set_entity_type(ENEMY);
+    g_game_state.enemies[2].set_ai_type(WASP);
+    g_game_state.enemies[2].set_ai_state(CIRCLE);
+    g_game_state.enemies[2].m_texture_id = load_texture(ENEMY_SPRITESHEET_FILEPATH);
+    g_game_state.enemies[2].set_position(glm::vec3(19.0f, -4.0f, 0.0f));
+    g_game_state.enemies[2].set_movement(glm::vec3(0.0f));
+    g_game_state.enemies[2].set_speed(1.5f);
+    g_game_state.enemies[2].set_radius(3.0f);
+    g_game_state.enemies[2].set_acceleration(glm::vec3(0.0f, 0.0f, 0.0f));
+
+    g_game_state.enemies[2].m_walking[g_game_state.enemies[2].IDLE] = new int[3] { 24, 25, 26 };
+
+    g_game_state.enemies[2].m_animation_indices = g_game_state.enemies[2].m_walking[g_game_state.enemies[2].IDLE];
+    g_game_state.enemies[2].m_animation_frames = 3;
+    g_game_state.enemies[2].m_animation_index = 0;
+    g_game_state.enemies[2].m_animation_time = 0.0f;
+    g_game_state.enemies[2].m_animation_cols = 9;
+    g_game_state.enemies[2].m_animation_rows = 3;
+    g_game_state.enemies[2].set_height(1.0f);
+    g_game_state.enemies[2].set_width(1.0f);
+
+    // ————— AUDIO SET-UP ————— //
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
 
     g_game_state.bgm = Mix_LoadMUS(BGM_FILEPATH);
     Mix_PlayMusic(g_game_state.bgm, 1);
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 16.0f);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 32.0f);
 
     g_game_state.jump_sfx = Mix_LoadWAV(JUMP_SFX_FILEPATH);
+    Mix_VolumeChunk(g_game_state.jump_sfx, MIX_MAX_VOLUME / 32.0f);
+
+    g_game_state.pop_sfx = Mix_LoadWAV(POP_SFX_FILEPATH);
+    Mix_VolumeChunk(g_game_state.pop_sfx, MIX_MAX_VOLUME / 32.0f);
 
     // ————— BLENDING ————— //
     glEnable(GL_BLEND);
@@ -273,9 +348,13 @@ void update()
 
     while (delta_time >= FIXED_TIMESTEP)
     {
-        g_game_state.player->update(FIXED_TIMESTEP, g_game_state.player, NULL, 0, g_game_state.map);
+        g_game_state.player->update(FIXED_TIMESTEP, g_game_state.player, g_game_state.enemies, ENEMY_COUNT, g_game_state.map, g_game_state.pop_sfx);
+        
+        for (int i = 0; i < ENEMY_COUNT; i++) g_game_state.enemies[i].update(FIXED_TIMESTEP, g_game_state.player, g_game_state.enemies, ENEMY_COUNT, g_game_state.map, g_game_state.pop_sfx);
+        
         delta_time -= FIXED_TIMESTEP;
     }
+
 
     g_accumulator = delta_time;
 
@@ -290,6 +369,7 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT);
 
     g_game_state.player->render(&g_shader_program);
+    for (int i = 0; i < ENEMY_COUNT; i++) g_game_state.enemies[i].render(&g_shader_program);
     g_game_state.map->render(&g_shader_program);
 
     SDL_GL_SwapWindow(g_display_window);
@@ -304,6 +384,7 @@ void shutdown()
     delete    g_game_state.map;
     Mix_FreeChunk(g_game_state.jump_sfx);
     Mix_FreeMusic(g_game_state.bgm);
+    Mix_FreeChunk(g_game_state.pop_sfx);
 }
 
 // ————— GAME LOOP ————— //
