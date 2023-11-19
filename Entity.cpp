@@ -19,6 +19,7 @@ Entity::Entity()
     m_position = glm::vec3(0.0f);
     m_velocity = glm::vec3(0.0f);
     m_acceleration = glm::vec3(0.0f);
+    m_rotation = glm::vec3(0.0f);
 
     // ––––– TRANSLATION ––––– //
     m_movement = glm::vec3(0.0f);
@@ -33,6 +34,7 @@ Entity::~Entity()
     delete[] m_animation_left;
     delete[] m_animation_right;
     delete[] m_walking;
+    delete[] m_animation_idle;
 }
 
 void Entity::draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint texture_id, int index)
@@ -133,22 +135,20 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
 
     if (m_animation_indices != NULL)
     {
-        if (glm::length(m_movement) != 0)
+        m_animation_time += delta_time;
+        float frames_per_second = (float)1 / SECONDS_PER_FRAME;
+
+        if (m_animation_time >= frames_per_second)
         {
-            m_animation_time += delta_time;
-            float frames_per_second = (float)1 / SECONDS_PER_FRAME;
+            m_animation_time = 0.0f;
+            m_animation_index++;
 
-            if (m_animation_time >= frames_per_second)
+            if (m_animation_index >= m_animation_frames)
             {
-                m_animation_time = 0.0f;
-                m_animation_index++;
-
-                if (m_animation_index >= m_animation_frames)
-                {
-                    m_animation_index = 0;
-                }
+                m_animation_index = 0;
             }
         }
+  
     }
 
     m_velocity.x = m_movement.x * m_speed;

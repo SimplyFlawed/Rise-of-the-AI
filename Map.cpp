@@ -59,6 +59,7 @@ void Map::build()
             });
         }
     }
+
     
     // The bounds are dependent on the size of the tiles
     m_left_bound   = 0 - (m_tile_size / 2);
@@ -95,6 +96,9 @@ bool Map::is_solid(glm::vec3 position, float *penetration_x, float *penetration_
     // inb4: we're passing by reference
     *penetration_x = 0;
     *penetration_y = 0;
+
+    // Non-solid tiles
+    int non_solid_tiles[] = { 0, 69, 89, 109, 124, 125 };
     
     // If we are out of bounds, it is not solid
     if (position.x < m_left_bound || position.x > m_right_bound)  return false;
@@ -110,6 +114,7 @@ bool Map::is_solid(glm::vec3 position, float *penetration_x, float *penetration_
     // If the tile index is 0 i.e. an open space, it is not solid
     int tile = m_level_data[tile_y * m_width + tile_x];
     if (tile == 0) return false;
+    if (std::find(std::begin(non_solid_tiles), std::end(non_solid_tiles), tile) != std::end(non_solid_tiles)) return false;
     
     // And we likely have some overlap
     float tile_center_x = (tile_x  * m_tile_size);

@@ -4,8 +4,8 @@
 #define GL_GLEXT_PROTOTYPES 1
 #define FIXED_TIMESTEP 0.0166666f
 #define ENEMY_COUNT 1
-#define LEVEL1_WIDTH 14
-#define LEVEL1_HEIGHT 5
+#define LEVEL1_WIDTH 23
+#define LEVEL1_HEIGHT 14
 
 #ifdef _WINDOWS
 #include <GL/glew.h>
@@ -50,15 +50,15 @@ VIEWPORT_Y = 0,
 VIEWPORT_WIDTH = WINDOW_WIDTH,
 VIEWPORT_HEIGHT = WINDOW_HEIGHT;
 
-const char GAME_WINDOW_NAME[] = "Hello, Maps!";
+const char GAME_WINDOW_NAME[] = "Rise of the AI";
 
 const char  V_SHADER_PATH[] = "shaders/vertex_textured.glsl",
 F_SHADER_PATH[] = "shaders/fragment_textured.glsl";
 
 const float MILLISECONDS_IN_SECOND = 1000.0;
 
-const char  SPRITESHEET_FILEPATH[] = "assets/images/george_0.png",
-MAP_TILESET_FILEPATH[] = "assets/images/tileset.png",
+const char  SPRITESHEET_FILEPATH[] = "assets/images/tilemap-player.png",
+MAP_TILESET_FILEPATH[] = "assets/images/tilemap_packed.png",
 BGM_FILEPATH[] = "assets/audio/dooblydoo.mp3",
 JUMP_SFX_FILEPATH[] = "assets/audio/bounce.wav";
 
@@ -66,13 +66,23 @@ const int NUMBER_OF_TEXTURES = 1;
 const GLint LEVEL_OF_DETAIL = 0;
 const GLint TEXTURE_BORDER = 0;
 
+
 unsigned int LEVEL_1_DATA[] =
 {
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-    0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-    1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
-    2, 2, 1, 1, 0, 0, 1, 1, 1, 2, 2, 2, 2, 2,
-    2, 2, 2, 2, 0, 0, 2, 2, 2, 2, 2, 2, 2, 2
+    122, 122, 122, 122, 122, 122, 122, 122, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0,
+    122, 122, 122, 122, 122, 122, 122, 122, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 69, 0, 0, 0,
+    122, 122, 122, 122, 122, 4, 142, 142, 143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 0, 0, 0,
+    122, 122, 122, 122, 122, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 89, 0, 0, 0,
+    122, 122, 122, 122, 122, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 109, 0, 0, 0,
+    4, 142, 142, 142, 142, 143, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 48, 49, 49, 49, 50, 0,
+    123, 0, 0, 0, 69, 0, 0, 0, 0, 0, 0, 124, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    123, 0, 0, 0, 89, 0, 0, 0, 0, 0, 21, 22, 22, 23, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    123, 0, 0, 0, 89, 0, 0, 0, 125, 0, 121, 122, 122, 123, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    123, 0, 0, 0, 109, 0, 0, 21, 22, 22, 25, 122, 122, 123, 0, 0, 0, 0, 0, 21, 22, 22, 22,
+    22, 22, 22, 22, 22, 22, 22, 25, 122, 122, 122, 122, 122, 24, 22, 22, 22, 22, 22, 25, 122, 122, 122,
+    22, 22, 23, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 21, 22, 23, 122, 122, 122,
+    122, 122, 123, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 121, 122, 123, 122, 122, 122,
+    122, 122, 123, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 122, 121, 122, 123, 122, 122, 122
 };
 
 // ————— VARIABLES ————— //
@@ -147,41 +157,39 @@ void initialise()
 
     // ————— MAP SET-UP ————— //
     GLuint map_texture_id = load_texture(MAP_TILESET_FILEPATH);
-    g_game_state.map = new Map(LEVEL1_WIDTH, LEVEL1_HEIGHT, LEVEL_1_DATA, map_texture_id, 1.0f, 4, 1);
+    g_game_state.map = new Map(LEVEL1_WIDTH, LEVEL1_HEIGHT, LEVEL_1_DATA, map_texture_id, 1.0f, 20, 9);
 
-    // ————— GEORGE SET-UP ————— //
+    // ————— PLAYER SET-UP ————— //
     // Existing
     g_game_state.player = new Entity();
     g_game_state.player->set_entity_type(PLAYER);
-    g_game_state.player->set_position(glm::vec3(0.0f, 0.0f, 0.0f));
+    g_game_state.player->set_position(glm::vec3(1.0f, -8.0f, 0.0f));
     g_game_state.player->set_movement(glm::vec3(0.0f));
     g_game_state.player->set_speed(2.5f);
     g_game_state.player->set_acceleration(glm::vec3(0.0f, -9.81f, 0.0f));
     g_game_state.player->m_texture_id = load_texture(SPRITESHEET_FILEPATH);
 
-    // Walking
-    g_game_state.player->m_walking[g_game_state.player->LEFT] = new int[4] { 1, 5, 9, 13 };
-    g_game_state.player->m_walking[g_game_state.player->RIGHT] = new int[4] { 3, 7, 11, 15 };
-    g_game_state.player->m_walking[g_game_state.player->UP] = new int[4] { 2, 6, 10, 14 };
-    g_game_state.player->m_walking[g_game_state.player->DOWN] = new int[4] { 0, 4, 8, 12 };
+    // Animation
+    g_game_state.player->m_walking[g_game_state.player->RIGHT] = new int[2] { 0, 1 };
+    g_game_state.player->m_walking[g_game_state.player->LEFT] = new int[2] { 2, 3 };
 
-    g_game_state.player->m_animation_indices = g_game_state.player->m_walking[g_game_state.player->RIGHT];  // start George looking left
-    g_game_state.player->m_animation_frames = 4;
+    g_game_state.player->m_animation_indices = g_game_state.player->m_walking[g_game_state.player->RIGHT];  
+    g_game_state.player->m_animation_frames = 2;
     g_game_state.player->m_animation_index = 0;
     g_game_state.player->m_animation_time = 0.0f;
     g_game_state.player->m_animation_cols = 4;
-    g_game_state.player->m_animation_rows = 4;
+    g_game_state.player->m_animation_rows = 1;
     g_game_state.player->set_height(0.8f);
     g_game_state.player->set_width(0.8f);
 
     // Jumping
-    g_game_state.player->m_jumping_power = 5.0f;
+    g_game_state.player->m_jumping_power = 8.0f;
 
 
     Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 4096);
 
     g_game_state.bgm = Mix_LoadMUS(BGM_FILEPATH);
-    Mix_PlayMusic(g_game_state.bgm, -1);
+    Mix_PlayMusic(g_game_state.bgm, 1);
     Mix_VolumeMusic(MIX_MAX_VOLUME / 16.0f);
 
     g_game_state.jump_sfx = Mix_LoadWAV(JUMP_SFX_FILEPATH);
@@ -231,12 +239,12 @@ void process_input()
 
     const Uint8* key_state = SDL_GetKeyboardState(NULL);
 
-    if (key_state[SDL_SCANCODE_LEFT])
+    if (key_state[SDL_SCANCODE_LEFT] || key_state[SDL_SCANCODE_A])
     {
         g_game_state.player->move_left();
         g_game_state.player->m_animation_indices = g_game_state.player->m_walking[g_game_state.player->LEFT];
     }
-    else if (key_state[SDL_SCANCODE_RIGHT])
+    else if (key_state[SDL_SCANCODE_RIGHT] || key_state[SDL_SCANCODE_D])
     {
         g_game_state.player->move_right();
         g_game_state.player->m_animation_indices = g_game_state.player->m_walking[g_game_state.player->RIGHT];
@@ -272,7 +280,7 @@ void update()
     g_accumulator = delta_time;
 
     g_view_matrix = glm::mat4(1.0f);
-    g_view_matrix = glm::translate(g_view_matrix, glm::vec3(-g_game_state.player->get_position().x, 0.0f, 0.0f));
+    g_view_matrix = glm::translate(g_view_matrix, glm::vec3(-g_game_state.player->get_position().x, -g_game_state.player->get_position().y, 0.0f));
 }
 
 void render()

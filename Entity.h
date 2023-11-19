@@ -13,7 +13,8 @@ private:
     int* m_animation_right = NULL, // move to the right
         * m_animation_left = NULL, // move to the left
         * m_animation_up = NULL, // move upwards
-        * m_animation_down = NULL; // move downwards
+        * m_animation_down = NULL, // move downwards
+        * m_animation_idle = NULL; // move downwards
 
     // ––––– PHYSICS (GRAVITY) ––––– //
     glm::vec3 m_position;
@@ -24,6 +25,8 @@ private:
     float     m_speed;
     glm::vec3 m_movement;
     glm::mat4 m_model_matrix;
+    glm::vec3 m_rotation;
+    float     m_angle;
 
 
     // ————— ENEMY AI ————— //
@@ -39,17 +42,19 @@ public:
     // ————— STATIC VARIABLES ————— //
     static const int    SECONDS_PER_FRAME = 4;
     static const int    LEFT = 0,
-        RIGHT = 1,
-        UP = 2,
-        DOWN = 3;
+                        RIGHT = 1,
+                        UP = 2,
+                        DOWN = 3,
+                        IDLE = 4;
 
     // ————— ANIMATION ————— //
-    int** m_walking = new int* [4]
+    int** m_walking = new int* [5]
         {
             m_animation_left,
                 m_animation_right,
                 m_animation_up,
-                m_animation_down
+                m_animation_down,
+                m_animation_idle
         };
 
     int m_animation_frames = 0,
@@ -108,6 +113,7 @@ public:
     glm::vec3  const get_movement()       const { return m_movement; };
     glm::vec3  const get_velocity()       const { return m_velocity; };
     glm::vec3  const get_acceleration()   const { return m_acceleration; };
+    glm::vec3  const get_rotation()       const { return m_rotation; };
     float      const get_jumping_power()  const { return m_jumping_power; };
     float      const get_speed()          const { return m_speed; };
     int        const get_width()          const { return m_width; };
@@ -125,4 +131,6 @@ public:
     void const set_acceleration(glm::vec3 new_acceleration) { m_acceleration = new_acceleration; };
     void const set_width(float new_width) { m_width = new_width; };
     void const set_height(float new_height) { m_height = new_height; };
+    void const set_rotation(glm::vec3 new_rotation) { m_rotation = new_rotation; };
+    void const set_angle(float new_angle) { m_angle = new_angle; };
 };
