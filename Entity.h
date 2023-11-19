@@ -83,12 +83,12 @@ public:
     ~Entity();
 
     void draw_sprite_from_texture_atlas(ShaderProgram* program, GLuint texture_id, int index);
-    void update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx); // Now, update should check for both objects in the game AND the map
+    void update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx, int& remaining_enemies, bool& lose); // Now, update should check for both objects in the game AND the map
     void render(ShaderProgram* program);
 
     bool const check_collision(Entity* other) const;
-    void const check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx);
-    void const check_collision_x(Entity* collidable_entities, int collidable_entity_count);
+    void const check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx, int& remaining_enemies, bool& lose);
+    void const check_collision_x(Entity* collidable_entities, int collidable_entity_count, bool& lose);
 
     // Overloading our methods to check for only the map
     void const check_collision_y(Map* map);

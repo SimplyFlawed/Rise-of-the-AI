@@ -129,7 +129,7 @@ void Entity::ai_wasp(Entity* player)
 }
 
 
-void Entity::update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx)
+void Entity::update(float delta_time, Entity* player, Entity* objects, int object_count, Map* map, Mix_Chunk* sfx, int& remaining_enemies, bool& lose)
 {
     if (!m_is_active) return;
 
@@ -174,11 +174,11 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
     // We make two calls to our check_collision methods, one for the collidable objects and one for
     // the map.
     m_position.y += m_velocity.y * delta_time;
-    check_collision_y(objects, object_count, sfx);
+    check_collision_y(objects, object_count, sfx, remaining_enemies, lose);
     check_collision_y(map);
 
     m_position.x += m_velocity.x * delta_time;
-    check_collision_x(objects, object_count);
+    check_collision_x(objects, object_count, lose);
     check_collision_x(map);
 
     if (m_is_jumping)
@@ -192,7 +192,7 @@ void Entity::update(float delta_time, Entity* player, Entity* objects, int objec
     m_model_matrix = glm::translate(m_model_matrix, m_position);
 }
 
-void const Entity::check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx)
+void const Entity::check_collision_y(Entity* collidable_entities, int collidable_entity_count, Mix_Chunk* sfx, int& remaining_enemies, bool& lose)
 {
     for (int i = 0; i < collidable_entity_count; i++)
     {
@@ -206,6 +206,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
                 m_position.y -= y_overlap;
                 m_velocity.y = 0;
                 m_collided_top = true;
+                lose = true;
             }
             else if (m_velocity.y < 0) {
                 m_position.y += y_overlap;
@@ -217,6 +218,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
                     m_velocity.y += m_jumping_power;
                     Mix_PlayChannel(-1, sfx, 0);
                     collidable_entity->deactivate();
+                    --remaining_enemies;
                 }
             }
         }
@@ -224,7 +226,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
     }
 }
 
-void const Entity::check_collision_x(Entity* collidable_entities, int collidable_entity_count)
+void const Entity::check_collision_x(Entity* collidable_entities, int collidable_entity_count, bool& lose)
 {
     for (int i = 0; i < collidable_entity_count; i++)
     {
@@ -238,11 +240,13 @@ void const Entity::check_collision_x(Entity* collidable_entities, int collidable
                 m_position.x -= x_overlap;
                 m_velocity.x = 0;
                 m_collided_right = true;
+                lose = true;
             }
             else if (m_velocity.x < 0) {
                 m_position.x += x_overlap;
                 m_velocity.x = 0;
                 m_collided_left = true;
+                lose = true;
             }
         }
     }
