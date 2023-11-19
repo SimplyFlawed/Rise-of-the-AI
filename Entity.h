@@ -37,7 +37,6 @@ private:
 
     float m_width = 1;
     float m_height = 1;
-    bool m_is_alive = true;
 
 
 public:

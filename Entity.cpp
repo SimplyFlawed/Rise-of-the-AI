@@ -216,7 +216,7 @@ void const Entity::check_collision_y(Entity* collidable_entities, int collidable
                 {
                     m_velocity.y += m_jumping_power;
                     Mix_PlayChannel(-1, sfx, 0);
-
+                    collidable_entity->deactivate();
                 }
             }
         }
@@ -333,6 +333,8 @@ void const Entity::check_collision_x(Map* map)
 
 void Entity::render(ShaderProgram* program)
 {
+    if (!m_is_active) return;
+
     program->set_model_matrix(m_model_matrix);
 
     if (m_animation_indices != NULL)
